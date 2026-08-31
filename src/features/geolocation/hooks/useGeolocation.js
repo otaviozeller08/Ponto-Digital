@@ -1,40 +1,54 @@
-import { useState } from 'react'
+import {
+  useCallback,
+  useState,
+} from 'react'
 
 import {
   getCurrentPosition,
 } from '../services/geolocationService'
 
 export function useGeolocation() {
-  const [position, setPosition] =
-    useState(null)
+  const [
+    position,
+    setPosition,
+  ] = useState(null)
 
-  const [loading, setLoading] =
-    useState(false)
+  const [
+    loading,
+    setLoading,
+  ] = useState(false)
 
-  const [error, setError] =
-    useState(null)
+  const [
+    error,
+    setError,
+  ] = useState(null)
 
-  async function requestLocation() {
-    try {
-      setLoading(true)
-      setError(null)
+  const requestLocation =
+    useCallback(
+      async () => {
+        try {
+          setLoading(true)
+          setError(null)
 
-      const currentPosition =
-        await getCurrentPosition()
+          const result =
+            await getCurrentPosition()
 
-      setPosition(
-        currentPosition
-      )
+          setPosition(result)
 
-      return currentPosition
-    } catch (error) {
-      setError(error.message)
+          return result
+        } catch (error) {
+          setError(
+            error.message ||
+            'Não foi possível obter sua localização.'
+          )
 
-      throw error
-    } finally {
-      setLoading(false)
-    }
-  }
+          throw error
+        } finally {
+          setLoading(false)
+        }
+      },
+      []
+    )
 
   function clearLocation() {
     setPosition(null)
@@ -43,10 +57,13 @@ export function useGeolocation() {
 
   return {
     position,
+
     loading,
+
     error,
 
     requestLocation,
+
     clearLocation,
   }
 }

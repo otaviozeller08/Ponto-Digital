@@ -1,0 +1,95 @@
+@media (max-width: 520px) {
+  .login-page {
+    padding:
+      38px 16px 30px;
+  }
+
+  .login-brand__logo {
+    width: 92px;
+    height: 92px;
+
+    border-width: 6px;
+  }
+
+  .login-brand__logo svg {
+    width: 50px;
+    height: 50px;
+  }
+
+  .login-brand h1 {
+    font-size: 34px;
+  }
+
+  .login-brand p {
+    font-size: 15px;
+  }
+
+  .login-card {
+    padding:
+      24px 18px;
+
+    border-radius:
+      20px;
+  }
+
+  .login-form__options {
+    align-items:
+      flex-start;
+
+    flex-wrap:
+      wrap;
+  }
+
+  .login-benefits {
+    padding:
+      18px;
+  }
+}
+
+@media (max-width: 360px) {
+  .login-page {
+    padding-left:
+      12px;
+
+    padding-right:
+      12px;
+  }
+
+  .login-card {
+    padding:
+      22px 15px;
+  }
+
+  .login-form__options {
+    flex-direction:
+      column;
+  }
+}
+@media (max-width: 620px) {
+  .location-page {
+    padding:
+      22px 14px 40px;
+  }
+
+  .location-page__header {
+    align-items:
+      flex-start;
+
+    flex-direction:
+      column;
+  }
+
+  .location-add-button {
+    width: 100%;
+  }
+
+  .location-form {
+    padding:
+      20px 16px;
+  }
+
+  .gps-result {
+    grid-template-columns:
+      1fr;
+  }
+}

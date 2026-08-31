@@ -1,4 +1,5 @@
 import {
+  LayoutDashboard,
   LogOut,
   MapPinned,
   Settings,
@@ -25,9 +26,9 @@ import {
 } from '../../geolocation/hooks/useGeolocation'
 
 import {
+  findNearestLocation,
   getCompanyLocations,
   getCurrentEmployee,
-  findNearestLocation,
 } from '../services/pointService'
 
 import {
@@ -45,6 +46,7 @@ import PunchButton from '../components/PunchButton'
 import PunchTimeline from '../components/PunchTimeline'
 import WorkdaySummary from '../components/WorkdaySummary'
 
+
 export default function DashboardFuncionarioPage() {
   const {
     profile,
@@ -52,35 +54,43 @@ export default function DashboardFuncionarioPage() {
     isRH,
   } = useAuth()
 
+
   const [
     employee,
     setEmployee,
   ] = useState(null)
+
 
   const [
     locations,
     setLocations,
   ] = useState([])
 
+
   const [
     loadingDashboard,
     setLoadingDashboard,
   ] = useState(true)
+
 
   const [
     dashboardError,
     setDashboardError,
   ] = useState(null)
 
+
   const {
     position,
+
     loading:
       locationLoading,
+
     error:
       locationError,
 
     requestLocation,
   } = useGeolocation()
+
 
   const {
     entries,
@@ -89,6 +99,7 @@ export default function DashboardFuncionarioPage() {
 
     loadTodayEntries,
   } = useTodayEntries()
+
 
   const {
     nextEntryType,
@@ -109,9 +120,9 @@ export default function DashboardFuncionarioPage() {
   } = usePoint()
 
 
-  // ========================================================
+  // =========================================================
   // LOCAL MAIS PRÓXIMO
-  // ========================================================
+  // =========================================================
 
   const nearestLocation =
     useMemo(
@@ -127,9 +138,9 @@ export default function DashboardFuncionarioPage() {
     )
 
 
-  // ========================================================
+  // =========================================================
   // CARREGAR DASHBOARD
-  // ========================================================
+  // =========================================================
 
   const loadDashboard =
     useCallback(
@@ -150,6 +161,7 @@ export default function DashboardFuncionarioPage() {
             employeeData
           )
 
+
           const [
             locationsData,
           ] =
@@ -167,12 +179,13 @@ export default function DashboardFuncionarioPage() {
               ),
             ])
 
+
           setLocations(
             locationsData
           )
         } catch (error) {
           console.error(
-            'Erro no dashboard:',
+            'Erro ao carregar dashboard:',
             error
           )
 
@@ -193,45 +206,65 @@ export default function DashboardFuncionarioPage() {
     )
 
 
+  // =========================================================
+  // INICIALIZAÇÃO
+  // =========================================================
+
   useEffect(() => {
     loadDashboard()
   }, [loadDashboard])
 
 
-  // ========================================================
+  // =========================================================
   // GPS AUTOMÁTICO
-  // ========================================================
+  // =========================================================
 
   useEffect(() => {
     requestLocation()
       .catch(() => {
-        // erro já tratado
-        // pelo hook
+        // erro tratado pelo hook
       })
   }, [requestLocation])
 
 
-  // ========================================================
+  // =========================================================
   // BATER PONTO
-  // ========================================================
+  // =========================================================
 
   async function handlePunch() {
     clearMessages()
 
-    let currentPosition =
-      position
+    if (!employee?.id) {
+      return
+    }
 
     try {
-      // Sempre busca uma posição nova
-      // antes de registrar o ponto.
+      /*
+       * Sempre buscamos uma posição nova
+       * antes do registro.
+       *
+       * A posição exibida na tela pode ter
+       * alguns segundos de diferença.
+       */
 
-      currentPosition =
+      const currentPosition =
         await requestLocation()
+
 
       await punch({
         position:
           currentPosition,
       })
+
+
+      /*
+       * Depois de registrar,
+       * atualizamos:
+       *
+       * - timeline
+       * - horas trabalhadas
+       * - próximo tipo de ponto
+       */
 
       await Promise.all([
         loadTodayEntries(
@@ -243,38 +276,61 @@ export default function DashboardFuncionarioPage() {
         ),
       ])
     } catch (error) {
-      console.error(error)
+      console.error(
+        'Erro ao registrar ponto:',
+        error
+      )
     }
   }
 
 
-  // ========================================================
+  // =========================================================
+  // LOGOUT
+  // =========================================================
+
+  async function handleLogout() {
+    try {
+      await logout()
+    } catch (error) {
+      console.error(
+        'Erro ao sair:',
+        error
+      )
+    }
+  }
+
+
+  // =========================================================
   // LOADING
-  // ========================================================
+  // =========================================================
 
   if (loadingDashboard) {
     return (
       <main className="point-loading-page">
+
         <span className="point-loading-spinner" />
 
         <strong>
           Carregando seu ponto...
         </strong>
+
       </main>
     )
   }
 
 
-  // ========================================================
+  // =========================================================
   // ERRO
-  // ========================================================
+  // =========================================================
 
   if (dashboardError) {
     return (
       <main className="point-loading-page">
+
         <div className="point-message point-message--error">
           {dashboardError}
         </div>
+
       </main>
     )
   }
@@ -287,17 +343,22 @@ export default function DashboardFuncionarioPage() {
 
   return (
     <main className="employee-dashboard">
+
       <div className="employee-dashboard__container">
 
-        {/* ================================================
+
+        {/* ====================================================
             HEADER
-        ================================================= */}
+        ==================================================== */}
 
         <header className="employee-header">
+
           <div>
+
             <span className="employee-header__brand">
               Ponto Digital
             </span>
+
 
             <h1>
               Olá,{' '}
@@ -306,13 +367,39 @@ export default function DashboardFuncionarioPage() {
                 'Funcionário'}
             </h1>
 
+
             <p>
               Registre sua jornada
               com segurança.
             </p>
+
           </div>
 
+
           <div className="employee-header__actions">
+
+
+            {/* ================================================
+                PAINEL RH
+            ================================================= */}
+
+            {isRH && (
+              <Link
+                to="/rh"
+                className="employee-header-button"
+                title="Painel do RH"
+              >
+                <LayoutDashboard
+                  size={20}
+                />
+              </Link>
+            )}
+
+
+            {/* ================================================
+                LOCAIS
+            ================================================= */}
+
             {isRH && (
               <Link
                 to="/rh/locais"
@@ -325,6 +412,12 @@ export default function DashboardFuncionarioPage() {
               </Link>
             )}
 
+
+            {/* ================================================
+                CONFIGURAÇÕES
+                Ainda sem rota definitiva
+            ================================================= */}
+
             <button
               type="button"
               className="employee-header-button"
@@ -335,32 +428,45 @@ export default function DashboardFuncionarioPage() {
               />
             </button>
 
+
+            {/* ================================================
+                LOGOUT
+            ================================================= */}
+
             <button
               type="button"
-              className="employee-header-button employee-header-button--logout"
+              className="
+                employee-header-button
+                employee-header-button--logout
+              "
               title="Sair"
-              onClick={logout}
+              onClick={
+                handleLogout
+              }
             >
               <LogOut
                 size={20}
               />
             </button>
+
           </div>
+
         </header>
 
 
-        {/* ================================================
+        {/* ====================================================
             RELÓGIO
-        ================================================= */}
+        ==================================================== */}
 
         <ClockCard />
 
 
-        {/* ================================================
+        {/* ====================================================
             LOCALIZAÇÃO
-        ================================================= */}
+        ==================================================== */}
 
         <LocationValidationCard
+
           position={
             position
           }
@@ -380,21 +486,28 @@ export default function DashboardFuncionarioPage() {
           onRefresh={
             requestLocation
           }
+
         />
 
 
-        {/* ================================================
-            FACIAL - RESERVADO
-        ================================================= */}
+        {/* ====================================================
+            RECONHECIMENTO FACIAL
+            Estrutura já reservada para próxima etapa
+        ==================================================== */}
 
         <section className="face-future-card">
+
           <div className="face-future-card__icon">
+
             <ShieldCheck
               size={22}
             />
+
           </div>
 
+
           <div>
+
             <strong>
               Reconhecimento facial
             </strong>
@@ -403,17 +516,20 @@ export default function DashboardFuncionarioPage() {
               Será ativado na próxima
               etapa de segurança.
             </span>
+
           </div>
+
 
           <span className="face-future-badge">
             Em breve
           </span>
+
         </section>
 
 
-        {/* ================================================
-            PRÓXIMO PONTO
-        ================================================= */}
+        {/* ====================================================
+            PRÓXIMO REGISTRO
+        ==================================================== */}
 
         <NextPunchCard
           entryType={
@@ -422,28 +538,42 @@ export default function DashboardFuncionarioPage() {
         />
 
 
-        {/* ================================================
-            MENSAGENS
-        ================================================= */}
+        {/* ====================================================
+            MENSAGEM DE ERRO
+        ==================================================== */}
 
         {pointError && (
+
           <div className="point-message point-message--error">
+
             {pointError}
+
           </div>
+
         )}
+
+
+        {/* ====================================================
+            MENSAGEM DE SUCESSO
+        ==================================================== */}
 
         {pointSuccess && (
+
           <div className="point-message point-message--success">
+
             {pointSuccess}
+
           </div>
+
         )}
 
 
-        {/* ================================================
-            BOTÃO
-        ================================================= */}
+        {/* ====================================================
+            BOTÃO PRINCIPAL
+        ==================================================== */}
 
         <PunchButton
+
           loading={
             registering
           }
@@ -460,14 +590,16 @@ export default function DashboardFuncionarioPage() {
           onClick={
             handlePunch
           }
+
         />
 
 
-        {/* ================================================
+        {/* ====================================================
             RESUMO
-        ================================================= */}
+        ==================================================== */}
 
         <WorkdaySummary
+
           workedMinutes={
             workedMinutes
           }
@@ -476,12 +608,13 @@ export default function DashboardFuncionarioPage() {
             employee
               ?.work_schedules
           }
+
         />
 
 
-        {/* ================================================
-            TIMELINE
-        ================================================= */}
+        {/* ====================================================
+            HISTÓRICO DO DIA
+        ==================================================== */}
 
         <PunchTimeline
           entries={
@@ -490,20 +623,24 @@ export default function DashboardFuncionarioPage() {
         />
 
 
-        {/* ================================================
-            RODAPÉ
-        ================================================= */}
+        {/* ====================================================
+            FOOTER
+        ==================================================== */}
 
         <footer className="employee-dashboard-footer">
+
           <ShieldCheck
             size={15}
           />
 
           O horário oficial é
           registrado pelo servidor.
+
         </footer>
 
+
       </div>
+
     </main>
   )
 }

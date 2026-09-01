@@ -1,10 +1,12 @@
 import {
   ArrowLeft,
+  CalendarRange,
   FilePenLine,
   MapPinned,
   RefreshCw,
   Search,
   Settings2,
+  Users,
 } from 'lucide-react'
 
 import {
@@ -229,6 +231,36 @@ export default function RHDashboardPage() {
 
 
           <div className="rh-header__actions">
+
+
+            {/* FUNCIONÁRIOS */}
+
+            <Link
+              to="/rh/funcionarios"
+              className="rh-header-button"
+              title="Funcionários"
+            >
+
+              <Users
+                size={20}
+              />
+
+            </Link>
+
+
+            {/* ALOCAÇÕES */}
+
+            <Link
+              to="/rh/alocacoes"
+              className="rh-header-button"
+              title="Alocações"
+            >
+
+              <CalendarRange
+                size={20}
+              />
+
+            </Link>
 
 
             {/* AJUSTES */}

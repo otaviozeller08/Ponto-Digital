@@ -2833,3 +2833,283 @@ select {
   border-radius:
     var(--radius-lg);
 }
+/* ==========================================================
+   ATIVIDADE / ALOCAÇÃO DO DIA
+========================================================== */
+
+.today-assignment-card {
+  padding: 18px;
+
+  margin-bottom: 14px;
+
+  background: #ffffff;
+
+  border:
+    1px solid #e2e8f0;
+
+  border-radius: 20px;
+
+  box-shadow:
+    0 8px 28px
+    rgba(15, 23, 42, 0.05);
+}
+
+
+.today-assignment-card__header {
+  display: flex;
+
+  align-items: center;
+
+  gap: 12px;
+
+  margin-bottom: 16px;
+}
+
+
+.today-assignment-card__icon {
+  width: 44px;
+  height: 44px;
+
+  flex: 0 0 44px;
+
+  display: flex;
+
+  align-items: center;
+  justify-content: center;
+
+  color: #2563eb;
+
+  background: #eff6ff;
+
+  border-radius: 14px;
+}
+
+
+.today-assignment-card__icon--warning {
+  color: #b45309;
+
+  background: #fef3c7;
+}
+
+
+.today-assignment-card__content {
+  min-width: 0;
+
+  flex: 1;
+
+  display: flex;
+  flex-direction: column;
+
+  gap: 2px;
+}
+
+
+.today-assignment-card__eyebrow {
+  color: #64748b;
+
+  font-size: 10px;
+
+  font-weight: 700;
+
+  text-transform: uppercase;
+
+  letter-spacing: .4px;
+}
+
+
+.today-assignment-card__content strong {
+  color: #0f172a;
+
+  font-size: 17px;
+}
+
+
+.today-assignment-card__content p {
+  margin: 4px 0 0;
+
+  color: #64748b;
+
+  font-size: 12px;
+
+  line-height: 1.5;
+}
+
+
+.today-assignment-card__badge {
+  padding: 6px 10px;
+
+  border-radius: 999px;
+
+  font-size: 10px;
+
+  font-weight: 800;
+}
+
+
+.today-assignment-card__badge--obra {
+  color: #1d4ed8;
+
+  background: #dbeafe;
+}
+
+
+.today-assignment-card__badge--maintenance {
+  color: #047857;
+
+  background: #d1fae5;
+}
+
+
+/* LOCAL */
+
+.today-assignment-location {
+  display: flex;
+
+  align-items: flex-start;
+
+  gap: 10px;
+
+  padding: 13px;
+
+  margin-bottom: 10px;
+
+  color: #2563eb;
+
+  background: #f8fafc;
+
+  border-radius: 13px;
+}
+
+
+.today-assignment-location > div {
+  min-width: 0;
+
+  display: flex;
+  flex-direction: column;
+}
+
+
+.today-assignment-location span {
+  margin-bottom: 2px;
+
+  color: #64748b;
+
+  font-size: 9px;
+}
+
+
+.today-assignment-location strong {
+  color: #0f172a;
+
+  font-size: 13px;
+}
+
+
+.today-assignment-location small {
+  margin-top: 2px;
+
+  color: #64748b;
+
+  font-size: 10px;
+}
+
+
+/* HORÁRIOS */
+
+.today-assignment-schedule {
+  display: grid;
+
+  grid-template-columns:
+    repeat(
+      4,
+      minmax(0, 1fr)
+    );
+
+  gap: 7px;
+}
+
+
+.today-assignment-schedule > div {
+  padding: 10px;
+
+  background: #f8fafc;
+
+  border-radius: 11px;
+}
+
+
+.today-assignment-schedule span {
+  display: block;
+
+  margin-bottom: 3px;
+
+  color: #64748b;
+
+  font-size: 9px;
+}
+
+
+.today-assignment-schedule strong {
+  color: #0f172a;
+
+  font-size: 13px;
+}
+
+
+/* OBSERVAÇÃO */
+
+.today-assignment-notes {
+  display: flex;
+
+  align-items: flex-start;
+
+  gap: 7px;
+
+  margin-top: 11px;
+
+  padding: 11px;
+
+  color: #475569;
+
+  background: #f8fafc;
+
+  border-radius: 11px;
+
+  font-size: 11px;
+}
+
+
+.today-assignment-card--empty {
+  display: flex;
+
+  align-items: flex-start;
+
+  gap: 12px;
+}
+
+
+.today-assignment-card__loading {
+  padding: 10px;
+
+  color: #64748b;
+
+  text-align: center;
+
+  font-size: 12px;
+}
+
+
+@media (max-width: 480px) {
+
+  .today-assignment-schedule {
+    grid-template-columns:
+      repeat(
+        2,
+        minmax(
+          0,
+          1fr
+        )
+      );
+  }
+
+}

@@ -6,11 +6,14 @@ import {
 import LoginPage from '../features/auth/pages/LoginPage'
 import DashboardFuncionarioPage from '../features/ponto/pages/DashboardFuncionarioPage'
 import LocaisPage from '../features/locais/pages/LocaisPage'
+
 import RHDashboardPage from '../features/rh/pages/RHDashboardPage'
+import RHAssignmentsPage from '../features/rh/pages/RHAssignmentsPage'
 
 import PublicRoute from '../routes/PublicRoute'
 import ProtectedRoute from '../routes/ProtectedRoute'
 import RoleRoute from '../routes/RoleRoute'
+
 
 export const router = createBrowserRouter([
   {
@@ -65,6 +68,20 @@ export const router = createBrowserRouter([
         ]}
       >
         <LocaisPage />
+      </RoleRoute>
+    ),
+  },
+
+  {
+    path: '/rh/alocacoes',
+    element: (
+      <RoleRoute
+        allowedRoles={[
+          'rh',
+          'admin',
+        ]}
+      >
+        <RHAssignmentsPage />
       </RoleRoute>
     ),
   },

@@ -32,6 +32,10 @@ import {
 } from '../services/pointService'
 
 import {
+  getTodayAssignment,
+} from '../services/todayAssignmentService'
+
+import {
   useTodayEntries,
 } from '../hooks/useTodayEntries'
 
@@ -45,6 +49,7 @@ import NextPunchCard from '../components/NextPunchCard'
 import PunchButton from '../components/PunchButton'
 import PunchTimeline from '../components/PunchTimeline'
 import WorkdaySummary from '../components/WorkdaySummary'
+import TodayAssignmentCard from '../components/TodayAssignmentCard'
 
 
 export default function DashboardFuncionarioPage() {
@@ -65,6 +70,18 @@ export default function DashboardFuncionarioPage() {
     locations,
     setLocations,
   ] = useState([])
+
+
+  const [
+    assignment,
+    setAssignment,
+  ] = useState(null)
+
+
+  const [
+    assignmentLoading,
+    setAssignmentLoading,
+  ] = useState(true)
 
 
   const [
@@ -121,6 +138,79 @@ export default function DashboardFuncionarioPage() {
 
 
   // =========================================================
+  // LOCAL DESIGNADO PARA HOJE
+  // =========================================================
+
+  const assignedLocation =
+    useMemo(
+      () => {
+        if (!assignment) {
+          return null
+        }
+
+
+        return {
+          id:
+            assignment.location_id,
+
+          name:
+            assignment.location_name,
+
+          address:
+            assignment.location_address,
+
+          latitude:
+            Number(
+              assignment.location_latitude
+            ),
+
+          longitude:
+            Number(
+              assignment.location_longitude
+            ),
+
+          radius_meters:
+            Number(
+              assignment.location_radius
+            ),
+        }
+      },
+      [
+        assignment,
+      ]
+    )
+
+
+  // =========================================================
+  // LOCAIS QUE O GPS PODE USAR
+  //
+  // Se existe alocação:
+  // usa SOMENTE o local daquele dia.
+  //
+  // Se ainda não existe alocação:
+  // mantém o funcionamento antigo por enquanto.
+  // =========================================================
+
+  const validationLocations =
+    useMemo(
+      () => {
+        if (assignedLocation) {
+          return [
+            assignedLocation,
+          ]
+        }
+
+
+        return locations
+      },
+      [
+        assignedLocation,
+        locations,
+      ]
+    )
+
+
+  // =========================================================
   // LOCAL MAIS PRÓXIMO
   // =========================================================
 
@@ -129,12 +219,52 @@ export default function DashboardFuncionarioPage() {
       () =>
         findNearestLocation(
           position,
-          locations
+          validationLocations
         ),
       [
         position,
-        locations,
+        validationLocations,
       ]
+    )
+
+
+  // =========================================================
+  // CARREGAR ALOCAÇÃO
+  // =========================================================
+
+  const loadAssignment =
+    useCallback(
+      async () => {
+        try {
+          setAssignmentLoading(
+            true
+          )
+
+
+          const data =
+            await getTodayAssignment()
+
+
+          setAssignment(
+            data
+          )
+        } catch (error) {
+          console.error(
+            'Erro ao carregar alocação:',
+            error
+          )
+
+
+          setAssignment(
+            null
+          )
+        } finally {
+          setAssignmentLoading(
+            false
+          )
+        }
+      },
+      []
     )
 
 
@@ -150,12 +280,15 @@ export default function DashboardFuncionarioPage() {
             true
           )
 
+
           setDashboardError(
             null
           )
 
+
           const employeeData =
             await getCurrentEmployee()
+
 
           setEmployee(
             employeeData
@@ -166,6 +299,7 @@ export default function DashboardFuncionarioPage() {
             locationsData,
           ] =
             await Promise.all([
+
               getCompanyLocations(
                 employeeData.company_id
               ),
@@ -177,6 +311,9 @@ export default function DashboardFuncionarioPage() {
               loadNextEntryType(
                 employeeData.id
               ),
+
+              loadAssignment(),
+
             ])
 
 
@@ -189,9 +326,10 @@ export default function DashboardFuncionarioPage() {
             error
           )
 
+
           setDashboardError(
             error.message ||
-              'Não foi possível carregar o dashboard.'
+            'Não foi possível carregar o dashboard.'
           )
         } finally {
           setLoadingDashboard(
@@ -202,6 +340,7 @@ export default function DashboardFuncionarioPage() {
       [
         loadTodayEntries,
         loadNextEntryType,
+        loadAssignment,
       ]
     )
 
@@ -234,17 +373,16 @@ export default function DashboardFuncionarioPage() {
   async function handlePunch() {
     clearMessages()
 
+
     if (!employee?.id) {
       return
     }
 
+
     try {
       /*
-       * Sempre buscamos uma posição nova
-       * antes do registro.
-       *
-       * A posição exibida na tela pode ter
-       * alguns segundos de diferença.
+       * Pegamos uma localização nova
+       * exatamente no momento do ponto.
        */
 
       const currentPosition =
@@ -258,15 +396,12 @@ export default function DashboardFuncionarioPage() {
 
 
       /*
-       * Depois de registrar,
-       * atualizamos:
-       *
-       * - timeline
-       * - horas trabalhadas
-       * - próximo tipo de ponto
+       * Atualizamos os dados depois
+       * do registro.
        */
 
       await Promise.all([
+
         loadTodayEntries(
           employee.id
         ),
@@ -274,6 +409,9 @@ export default function DashboardFuncionarioPage() {
         loadNextEntryType(
           employee.id
         ),
+
+        loadAssignment(),
+
       ])
     } catch (error) {
       console.error(
@@ -379,10 +517,6 @@ export default function DashboardFuncionarioPage() {
           <div className="employee-header__actions">
 
 
-            {/* ================================================
-                PAINEL RH
-            ================================================= */}
-
             {isRH && (
               <Link
                 to="/rh"
@@ -395,10 +529,6 @@ export default function DashboardFuncionarioPage() {
               </Link>
             )}
 
-
-            {/* ================================================
-                LOCAIS
-            ================================================= */}
 
             {isRH && (
               <Link
@@ -413,11 +543,6 @@ export default function DashboardFuncionarioPage() {
             )}
 
 
-            {/* ================================================
-                CONFIGURAÇÕES
-                Ainda sem rota definitiva
-            ================================================= */}
-
             <button
               type="button"
               className="employee-header-button"
@@ -428,10 +553,6 @@ export default function DashboardFuncionarioPage() {
               />
             </button>
 
-
-            {/* ================================================
-                LOGOUT
-            ================================================= */}
 
             <button
               type="button"
@@ -455,10 +576,24 @@ export default function DashboardFuncionarioPage() {
 
 
         {/* ====================================================
-            RELÓGIO
+            RELÓGIO OFICIAL
         ==================================================== */}
 
         <ClockCard />
+
+
+        {/* ====================================================
+            ALOCAÇÃO / ATIVIDADE DO DIA
+        ==================================================== */}
+
+        <TodayAssignmentCard
+          assignment={
+            assignment
+          }
+          loading={
+            assignmentLoading
+          }
+        />
 
 
         {/* ====================================================
@@ -491,8 +626,7 @@ export default function DashboardFuncionarioPage() {
 
 
         {/* ====================================================
-            RECONHECIMENTO FACIAL
-            Estrutura já reservada para próxima etapa
+            FACIAL
         ==================================================== */}
 
         <section className="face-future-card">
@@ -528,7 +662,7 @@ export default function DashboardFuncionarioPage() {
 
 
         {/* ====================================================
-            PRÓXIMO REGISTRO
+            PRÓXIMO PONTO
         ==================================================== */}
 
         <NextPunchCard
@@ -538,38 +672,22 @@ export default function DashboardFuncionarioPage() {
         />
 
 
-        {/* ====================================================
-            MENSAGEM DE ERRO
-        ==================================================== */}
-
         {pointError && (
-
           <div className="point-message point-message--error">
-
             {pointError}
-
           </div>
-
         )}
 
-
-        {/* ====================================================
-            MENSAGEM DE SUCESSO
-        ==================================================== */}
 
         {pointSuccess && (
-
           <div className="point-message point-message--success">
-
             {pointSuccess}
-
           </div>
-
         )}
 
 
         {/* ====================================================
-            BOTÃO PRINCIPAL
+            BOTÃO BATER PONTO
         ==================================================== */}
 
         <PunchButton
@@ -605,15 +723,14 @@ export default function DashboardFuncionarioPage() {
           }
 
           schedule={
-            employee
-              ?.work_schedules
+            employee?.work_schedules
           }
 
         />
 
 
         {/* ====================================================
-            HISTÓRICO DO DIA
+            JORNADA DO DIA
         ==================================================== */}
 
         <PunchTimeline
@@ -622,10 +739,6 @@ export default function DashboardFuncionarioPage() {
           }
         />
 
-
-        {/* ====================================================
-            FOOTER
-        ==================================================== */}
 
         <footer className="employee-dashboard-footer">
 

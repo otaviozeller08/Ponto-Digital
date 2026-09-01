@@ -1,5 +1,6 @@
 import {
   ArrowLeft,
+  FilePenLine,
   MapPinned,
   RefreshCw,
   Search,
@@ -62,6 +63,10 @@ export default function RHDashboardPage() {
     useState('')
 
 
+  // =========================================================
+  // CARREGAR DASHBOARD
+  // =========================================================
+
   async function loadDashboard() {
 
     try {
@@ -114,12 +119,20 @@ export default function RHDashboardPage() {
   }
 
 
+  // =========================================================
+  // INICIALIZAÇÃO
+  // =========================================================
+
   useEffect(() => {
 
     loadDashboard()
 
   }, [])
 
+
+  // =========================================================
+  // FILTRO
+  // =========================================================
 
   const filteredEmployees =
     useMemo(
@@ -163,11 +176,19 @@ export default function RHDashboardPage() {
     )
 
 
+  // =========================================================
+  // RENDER
+  // =========================================================
+
   return (
     <main className="rh-dashboard">
 
       <div className="rh-dashboard__container">
 
+
+        {/* ====================================================
+            HEADER
+        ==================================================== */}
 
         <header className="rh-header">
 
@@ -176,6 +197,7 @@ export default function RHDashboardPage() {
             <Link
               to="/app"
               className="rh-header-button"
+              title="Voltar ao ponto"
             >
 
               <ArrowLeft
@@ -208,6 +230,24 @@ export default function RHDashboardPage() {
 
           <div className="rh-header__actions">
 
+
+            {/* AJUSTES */}
+
+            <Link
+              to="/rh/ajustes"
+              className="rh-header-button"
+              title="Ajustes de ponto"
+            >
+
+              <FilePenLine
+                size={20}
+              />
+
+            </Link>
+
+
+            {/* LOCAIS */}
+
             <Link
               to="/rh/locais"
               className="rh-header-button"
@@ -220,6 +260,8 @@ export default function RHDashboardPage() {
 
             </Link>
 
+
+            {/* CONFIGURAÇÕES */}
 
             <button
               type="button"
@@ -238,6 +280,10 @@ export default function RHDashboardPage() {
         </header>
 
 
+        {/* ====================================================
+            RESUMO
+        ==================================================== */}
+
         <RHSummaryCards
 
           employees={
@@ -250,6 +296,10 @@ export default function RHDashboardPage() {
 
         />
 
+
+        {/* ====================================================
+            BARRA DE FERRAMENTAS
+        ==================================================== */}
 
         <section className="rh-toolbar">
 
@@ -308,6 +358,10 @@ export default function RHDashboardPage() {
         </section>
 
 
+        {/* ====================================================
+            ERRO
+        ==================================================== */}
+
         {error && (
 
           <div className="point-message point-message--error">
@@ -318,6 +372,10 @@ export default function RHDashboardPage() {
 
         )}
 
+
+        {/* ====================================================
+            FUNCIONÁRIOS
+        ==================================================== */}
 
         <section className="rh-employees">
 
@@ -346,7 +404,8 @@ export default function RHDashboardPage() {
 
             </div>
 
-          ) : filteredEmployees.length === 0 ? (
+          ) : filteredEmployees.length ===
+            0 ? (
 
             <div className="rh-empty">
 

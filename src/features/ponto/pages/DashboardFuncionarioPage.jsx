@@ -1,4 +1,5 @@
 import {
+  FilePenLine,
   LayoutDashboard,
   LogOut,
   MapPinned,
@@ -183,12 +184,6 @@ export default function DashboardFuncionarioPage() {
 
   // =========================================================
   // LOCAIS QUE O GPS PODE USAR
-  //
-  // Se existe alocação:
-  // usa SOMENTE o local daquele dia.
-  //
-  // Se ainda não existe alocação:
-  // mantém o funcionamento antigo por enquanto.
   // =========================================================
 
   const validationLocations =
@@ -380,11 +375,6 @@ export default function DashboardFuncionarioPage() {
 
 
     try {
-      /*
-       * Pegamos uma localização nova
-       * exatamente no momento do ponto.
-       */
-
       const currentPosition =
         await requestLocation()
 
@@ -394,11 +384,6 @@ export default function DashboardFuncionarioPage() {
           currentPosition,
       })
 
-
-      /*
-       * Atualizamos os dados depois
-       * do registro.
-       */
 
       await Promise.all([
 
@@ -517,6 +502,21 @@ export default function DashboardFuncionarioPage() {
           <div className="employee-header__actions">
 
 
+            {/* AJUSTE DE PONTO */}
+
+            <Link
+              to="/app/ajustes"
+              className="employee-header-button"
+              title="Ajuste de ponto"
+            >
+              <FilePenLine
+                size={20}
+              />
+            </Link>
+
+
+            {/* PAINEL RH */}
+
             {isRH && (
               <Link
                 to="/rh"
@@ -529,6 +529,8 @@ export default function DashboardFuncionarioPage() {
               </Link>
             )}
 
+
+            {/* LOCAIS */}
 
             {isRH && (
               <Link
@@ -543,6 +545,8 @@ export default function DashboardFuncionarioPage() {
             )}
 
 
+            {/* CONFIGURAÇÕES */}
+
             <button
               type="button"
               className="employee-header-button"
@@ -553,6 +557,8 @@ export default function DashboardFuncionarioPage() {
               />
             </button>
 
+
+            {/* LOGOUT */}
 
             <button
               type="button"

@@ -33,7 +33,9 @@ import {
 } from '../services/pointService'
 
 import {
+  getNextAssignment,
   getTodayAssignment,
+  getTodayRoute,
 } from '../services/todayAssignmentService'
 
 import {
@@ -51,50 +53,88 @@ import PunchButton from '../components/PunchButton'
 import PunchTimeline from '../components/PunchTimeline'
 import WorkdaySummary from '../components/WorkdaySummary'
 import TodayAssignmentCard from '../components/TodayAssignmentCard'
+import NextAssignmentCard from '../components/NextAssignmentCard'
+import TodayRouteCard from '../components/TodayRouteCard'
 
 
 export default function DashboardFuncionarioPage() {
+
   const {
     profile,
     logout,
     isRH,
-  } = useAuth()
+  } =
+    useAuth()
 
 
   const [
     employee,
     setEmployee,
-  ] = useState(null)
+  ] =
+    useState(null)
 
 
   const [
     locations,
     setLocations,
-  ] = useState([])
+  ] =
+    useState([])
 
 
   const [
     assignment,
     setAssignment,
-  ] = useState(null)
+  ] =
+    useState(null)
+
+
+  const [
+    todayRoute,
+    setTodayRoute,
+  ] =
+    useState([])
+
+
+  const [
+    nextAssignment,
+    setNextAssignment,
+  ] =
+    useState(null)
 
 
   const [
     assignmentLoading,
     setAssignmentLoading,
-  ] = useState(true)
+  ] =
+    useState(true)
+
+
+  const [
+    routeLoading,
+    setRouteLoading,
+  ] =
+    useState(true)
+
+
+  const [
+    nextAssignmentLoading,
+    setNextAssignmentLoading,
+  ] =
+    useState(true)
 
 
   const [
     loadingDashboard,
     setLoadingDashboard,
-  ] = useState(true)
+  ] =
+    useState(true)
 
 
   const [
     dashboardError,
     setDashboardError,
-  ] = useState(null)
+  ] =
+    useState(null)
 
 
   const {
@@ -107,7 +147,8 @@ export default function DashboardFuncionarioPage() {
       locationError,
 
     requestLocation,
-  } = useGeolocation()
+  } =
+    useGeolocation()
 
 
   const {
@@ -116,7 +157,8 @@ export default function DashboardFuncionarioPage() {
     workedMinutes,
 
     loadTodayEntries,
-  } = useTodayEntries()
+  } =
+    useTodayEntries()
 
 
   const {
@@ -135,22 +177,28 @@ export default function DashboardFuncionarioPage() {
     punch,
 
     clearMessages,
-  } = usePoint()
+  } =
+    usePoint()
 
 
   // =========================================================
-  // LOCAL DESIGNADO PARA HOJE
+  // LOCAL ANTIGO / PRINCIPAL
   // =========================================================
 
   const assignedLocation =
     useMemo(
       () => {
-        if (!assignment) {
+
+        if (
+          !assignment ||
+          !assignment.location_id
+        ) {
           return null
         }
 
 
         return {
+
           id:
             assignment.location_id,
 
@@ -174,7 +222,9 @@ export default function DashboardFuncionarioPage() {
             Number(
               assignment.location_radius
             ),
+
         }
+
       },
       [
         assignment,
@@ -183,22 +233,92 @@ export default function DashboardFuncionarioPage() {
 
 
   // =========================================================
-  // LOCAIS QUE O GPS PODE USAR
+  // LOCAIS DO ROTEIRO
+  // =========================================================
+
+  const routeLocations =
+    useMemo(
+      () => {
+
+        return todayRoute
+          .filter(
+            stop =>
+              stop.location &&
+              stop.location.active !==
+                false
+          )
+          .map(
+            stop => ({
+
+              id:
+                stop.location.id,
+
+              name:
+                stop.location.name,
+
+              address:
+                stop.location.address,
+
+              latitude:
+                Number(
+                  stop.location.latitude
+                ),
+
+              longitude:
+                Number(
+                  stop.location.longitude
+                ),
+
+              radius_meters:
+                Number(
+                  stop.location.radius_meters
+                ),
+
+              sequence:
+                stop.sequence,
+
+            })
+          )
+
+      },
+      [
+        todayRoute,
+      ]
+    )
+
+
+  // =========================================================
+  // LOCAIS AUTORIZADOS PARA GPS
   // =========================================================
 
   const validationLocations =
     useMemo(
       () => {
+
+        if (
+          routeLocations.length >
+          0
+        ) {
+
+          return routeLocations
+
+        }
+
+
         if (assignedLocation) {
+
           return [
             assignedLocation,
           ]
+
         }
 
 
         return locations
+
       },
       [
+        routeLocations,
         assignedLocation,
         locations,
       ]
@@ -224,13 +344,82 @@ export default function DashboardFuncionarioPage() {
 
 
   // =========================================================
-  // CARREGAR ALOCAÇÃO
+  // ROTEIRO
+  // =========================================================
+
+  const loadRoute =
+    useCallback(
+      async assignmentId => {
+
+        if (!assignmentId) {
+
+          setTodayRoute([])
+
+          setRouteLoading(
+            false
+          )
+
+          return []
+
+        }
+
+
+        try {
+
+          setRouteLoading(
+            true
+          )
+
+
+          const data =
+            await getTodayRoute(
+              assignmentId
+            )
+
+
+          setTodayRoute(
+            data
+          )
+
+
+          return data
+
+        } catch (error) {
+
+          console.error(
+            'Erro ao carregar roteiro:',
+            error
+          )
+
+
+          setTodayRoute([])
+
+
+          return []
+
+        } finally {
+
+          setRouteLoading(
+            false
+          )
+
+        }
+
+      },
+      []
+    )
+
+
+  // =========================================================
+  // ALOCAÇÃO DE HOJE
   // =========================================================
 
   const loadAssignment =
     useCallback(
       async () => {
+
         try {
+
           setAssignmentLoading(
             true
           )
@@ -243,7 +432,17 @@ export default function DashboardFuncionarioPage() {
           setAssignment(
             data
           )
+
+
+          await loadRoute(
+            data?.assignment_id
+          )
+
+
+          return data
+
         } catch (error) {
+
           console.error(
             'Erro ao carregar alocação:',
             error
@@ -253,11 +452,71 @@ export default function DashboardFuncionarioPage() {
           setAssignment(
             null
           )
+
+
+          setTodayRoute([])
+
+
+          return null
+
         } finally {
+
           setAssignmentLoading(
             false
           )
+
         }
+
+      },
+      [
+        loadRoute,
+      ]
+    )
+
+
+  // =========================================================
+  // PRÓXIMA ALOCAÇÃO
+  // =========================================================
+
+  const loadNextAssignment =
+    useCallback(
+      async () => {
+
+        try {
+
+          setNextAssignmentLoading(
+            true
+          )
+
+
+          const data =
+            await getNextAssignment()
+
+
+          setNextAssignment(
+            data
+          )
+
+        } catch (error) {
+
+          console.error(
+            'Erro ao carregar próxima alocação:',
+            error
+          )
+
+
+          setNextAssignment(
+            null
+          )
+
+        } finally {
+
+          setNextAssignmentLoading(
+            false
+          )
+
+        }
+
       },
       []
     )
@@ -270,7 +529,9 @@ export default function DashboardFuncionarioPage() {
   const loadDashboard =
     useCallback(
       async () => {
+
         try {
+
           setLoadingDashboard(
             true
           )
@@ -309,13 +570,17 @@ export default function DashboardFuncionarioPage() {
 
               loadAssignment(),
 
+              loadNextAssignment(),
+
             ])
 
 
           setLocations(
             locationsData
           )
+
         } catch (error) {
+
           console.error(
             'Erro ao carregar dashboard:',
             error
@@ -326,16 +591,21 @@ export default function DashboardFuncionarioPage() {
             error.message ||
             'Não foi possível carregar o dashboard.'
           )
+
         } finally {
+
           setLoadingDashboard(
             false
           )
+
         }
+
       },
       [
         loadTodayEntries,
         loadNextEntryType,
         loadAssignment,
+        loadNextAssignment,
       ]
     )
 
@@ -344,21 +614,37 @@ export default function DashboardFuncionarioPage() {
   // INICIALIZAÇÃO
   // =========================================================
 
-  useEffect(() => {
-    loadDashboard()
-  }, [loadDashboard])
+  useEffect(
+    () => {
+
+      loadDashboard()
+
+    },
+    [
+      loadDashboard,
+    ]
+  )
 
 
   // =========================================================
   // GPS AUTOMÁTICO
   // =========================================================
 
-  useEffect(() => {
-    requestLocation()
-      .catch(() => {
-        // erro tratado pelo hook
-      })
-  }, [requestLocation])
+  useEffect(
+    () => {
+
+      requestLocation()
+        .catch(
+          () => {
+            // erro tratado pelo hook
+          }
+        )
+
+    },
+    [
+      requestLocation,
+    ]
+  )
 
 
   // =========================================================
@@ -366,6 +652,7 @@ export default function DashboardFuncionarioPage() {
   // =========================================================
 
   async function handlePunch() {
+
     clearMessages()
 
 
@@ -375,6 +662,7 @@ export default function DashboardFuncionarioPage() {
 
 
     try {
+
       const currentPosition =
         await requestLocation()
 
@@ -397,13 +685,19 @@ export default function DashboardFuncionarioPage() {
 
         loadAssignment(),
 
+        loadNextAssignment(),
+
       ])
+
     } catch (error) {
+
       console.error(
         'Erro ao registrar ponto:',
         error
       )
+
     }
+
   }
 
 
@@ -412,14 +706,20 @@ export default function DashboardFuncionarioPage() {
   // =========================================================
 
   async function handleLogout() {
+
     try {
+
       await logout()
+
     } catch (error) {
+
       console.error(
         'Erro ao sair:',
         error
       )
+
     }
+
   }
 
 
@@ -428,10 +728,12 @@ export default function DashboardFuncionarioPage() {
   // =========================================================
 
   if (loadingDashboard) {
+
     return (
       <main className="point-loading-page">
 
         <span className="point-loading-spinner" />
+
 
         <strong>
           Carregando seu ponto...
@@ -439,6 +741,7 @@ export default function DashboardFuncionarioPage() {
 
       </main>
     )
+
   }
 
 
@@ -447,15 +750,19 @@ export default function DashboardFuncionarioPage() {
   // =========================================================
 
   if (dashboardError) {
+
     return (
       <main className="point-loading-page">
 
         <div className="point-message point-message--error">
+
           {dashboardError}
+
         </div>
 
       </main>
     )
+
   }
 
 
@@ -470,30 +777,37 @@ export default function DashboardFuncionarioPage() {
       <div className="employee-dashboard__container">
 
 
-        {/* ====================================================
-            HEADER
-        ==================================================== */}
+        {/* HEADER */}
 
         <header className="employee-header">
 
           <div>
 
             <span className="employee-header__brand">
+
               Ponto Digital
+
             </span>
 
 
             <h1>
+
               Olá,{' '}
-              {profile?.full_name ||
+
+              {
+                profile?.full_name ||
                 employee?.full_name ||
-                'Funcionário'}
+                'Funcionário'
+              }
+
             </h1>
 
 
             <p>
+
               Registre sua jornada
               com segurança.
+
             </p>
 
           </div>
@@ -502,63 +816,65 @@ export default function DashboardFuncionarioPage() {
           <div className="employee-header__actions">
 
 
-            {/* AJUSTE DE PONTO */}
-
             <Link
               to="/app/ajustes"
               className="employee-header-button"
               title="Ajuste de ponto"
             >
+
               <FilePenLine
                 size={20}
               />
+
             </Link>
 
 
-            {/* PAINEL RH */}
-
             {isRH && (
+
               <Link
                 to="/rh"
                 className="employee-header-button"
                 title="Painel do RH"
               >
+
                 <LayoutDashboard
                   size={20}
                 />
+
               </Link>
+
             )}
 
 
-            {/* LOCAIS */}
-
             {isRH && (
+
               <Link
                 to="/rh/locais"
                 className="employee-header-button"
                 title="Locais autorizados"
               >
+
                 <MapPinned
                   size={20}
                 />
+
               </Link>
+
             )}
 
-
-            {/* CONFIGURAÇÕES */}
 
             <button
               type="button"
               className="employee-header-button"
               title="Configurações"
             >
+
               <Settings
                 size={20}
               />
+
             </button>
 
-
-            {/* LOGOUT */}
 
             <button
               type="button"
@@ -571,9 +887,11 @@ export default function DashboardFuncionarioPage() {
                 handleLogout
               }
             >
+
               <LogOut
                 size={20}
               />
+
             </button>
 
           </div>
@@ -581,16 +899,12 @@ export default function DashboardFuncionarioPage() {
         </header>
 
 
-        {/* ====================================================
-            RELÓGIO OFICIAL
-        ==================================================== */}
+        {/* RELÓGIO */}
 
         <ClockCard />
 
 
-        {/* ====================================================
-            ALOCAÇÃO / ATIVIDADE DO DIA
-        ==================================================== */}
+        {/* ALOCAÇÃO HOJE */}
 
         <TodayAssignmentCard
           assignment={
@@ -602,18 +916,43 @@ export default function DashboardFuncionarioPage() {
         />
 
 
-        {/* ====================================================
-            LOCALIZAÇÃO
-        ==================================================== */}
+        {/* ROTEIRO HOJE */}
+
+        <TodayRouteCard
+          route={
+            todayRoute
+          }
+          loading={
+            routeLoading
+          }
+        />
+
+
+        {/* PRÓXIMA ALOCAÇÃO */}
+
+        <NextAssignmentCard
+          assignment={
+            nextAssignment
+          }
+          loading={
+            nextAssignmentLoading
+          }
+        />
+
+
+        {/* LOCALIZAÇÃO */}
 
         <LocationValidationCard
-
           position={
             position
           }
 
           nearestLocation={
             nearestLocation
+          }
+
+          authorizedLocations={
+            validationLocations
           }
 
           loading={
@@ -627,13 +966,10 @@ export default function DashboardFuncionarioPage() {
           onRefresh={
             requestLocation
           }
-
         />
 
 
-        {/* ====================================================
-            FACIAL
-        ==================================================== */}
+        {/* FACIAL */}
 
         <section className="face-future-card">
 
@@ -652,24 +988,27 @@ export default function DashboardFuncionarioPage() {
               Reconhecimento facial
             </strong>
 
+
             <span>
+
               Será ativado na próxima
               etapa de segurança.
+
             </span>
 
           </div>
 
 
           <span className="face-future-badge">
+
             Em breve
+
           </span>
 
         </section>
 
 
-        {/* ====================================================
-            PRÓXIMO PONTO
-        ==================================================== */}
+        {/* PRÓXIMO PONTO */}
 
         <NextPunchCard
           entryType={
@@ -679,25 +1018,30 @@ export default function DashboardFuncionarioPage() {
 
 
         {pointError && (
+
           <div className="point-message point-message--error">
+
             {pointError}
+
           </div>
+
         )}
 
 
         {pointSuccess && (
+
           <div className="point-message point-message--success">
+
             {pointSuccess}
+
           </div>
+
         )}
 
 
-        {/* ====================================================
-            BOTÃO BATER PONTO
-        ==================================================== */}
+        {/* BATER PONTO */}
 
         <PunchButton
-
           loading={
             registering
           }
@@ -714,30 +1058,24 @@ export default function DashboardFuncionarioPage() {
           onClick={
             handlePunch
           }
-
         />
 
 
-        {/* ====================================================
-            RESUMO
-        ==================================================== */}
+        {/* RESUMO */}
 
         <WorkdaySummary
-
           workedMinutes={
             workedMinutes
           }
 
           schedule={
-            employee?.work_schedules
+            employee
+              ?.work_schedules
           }
-
         />
 
 
-        {/* ====================================================
-            JORNADA DO DIA
-        ==================================================== */}
+        {/* JORNADA */}
 
         <PunchTimeline
           entries={

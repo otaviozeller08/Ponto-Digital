@@ -1,5 +1,7 @@
 import {
+  ArrowDown,
   ArrowLeft,
+  ArrowUp,
   BriefcaseBusiness,
   Building2,
   CalendarDays,
@@ -8,6 +10,7 @@ import {
   MapPin,
   Plus,
   RefreshCw,
+  Route,
   Trash2,
   Wrench,
 } from 'lucide-react'
@@ -39,8 +42,10 @@ import './RHAssignmentsPage.css'
 // ============================================================
 
 function getToday() {
+
   const now =
     new Date()
+
 
   const formatter =
     new Intl.DateTimeFormat(
@@ -60,32 +65,88 @@ function getToday() {
       }
     )
 
-  return formatter.format(now)
+
+  return formatter.format(
+    now
+  )
 }
 
 
-function shortTime(value) {
+// ============================================================
+// HORÁRIO CURTO
+// ============================================================
+
+function shortTime(
+  value
+) {
+
   if (!value) {
     return '--:--'
   }
 
-  return String(value).slice(
+
+  return String(
+    value
+  ).slice(
     0,
     5
   )
 }
 
 
-function getAssignmentLabel(type) {
-  if (type === 'obra') {
+// ============================================================
+// LABEL
+// ============================================================
+
+function getAssignmentLabel(
+  type
+) {
+
+  if (
+    type ===
+    'obra'
+  ) {
     return 'Obra'
   }
 
-  if (type === 'manutencao') {
+
+  if (
+    type ===
+    'manutencao'
+  ) {
     return 'Manutenção'
   }
 
+
   return 'Outro'
+}
+
+
+// ============================================================
+// NOVA PARADA
+// ============================================================
+
+function createEmptyStop() {
+
+  return {
+
+    id:
+      crypto.randomUUID(),
+
+    locationId:
+      '',
+
+    expectedArrival:
+      '',
+
+    expectedDeparture:
+      '',
+
+    notes:
+      '',
+
+  }
+
 }
 
 
@@ -94,11 +155,14 @@ function getAssignmentLabel(type) {
 // ============================================================
 
 export default function RHAssignmentsPage() {
+
   const [
     workDate,
     setWorkDate,
   ] =
-    useState(getToday())
+    useState(
+      getToday()
+    )
 
 
   const [
@@ -130,17 +194,21 @@ export default function RHAssignmentsPage() {
 
 
   const [
-    locationId,
-    setLocationId,
-  ] =
-    useState('')
-
-
-  const [
     assignmentType,
     setAssignmentType,
   ] =
-    useState('obra')
+    useState(
+      'obra'
+    )
+
+
+  const [
+    stops,
+    setStops,
+  ] =
+    useState([
+      createEmptyStop(),
+    ])
 
 
   const [
@@ -200,11 +268,13 @@ export default function RHAssignmentsPage() {
 
 
   // ==========================================================
-  // CARREGAR FUNCIONÁRIOS E LOCAIS
+  // BASE
   // ==========================================================
 
   async function loadBaseData() {
+
     try {
+
       setError('')
 
 
@@ -213,8 +283,11 @@ export default function RHAssignmentsPage() {
         locationData,
       ] =
         await Promise.all([
+
           getActiveEmployees(),
+
           getActiveLocations(),
+
         ])
 
 
@@ -226,7 +299,9 @@ export default function RHAssignmentsPage() {
       setLocations(
         locationData
       )
+
     } catch (err) {
+
       console.error(
         'Erro ao carregar dados:',
         err
@@ -237,17 +312,23 @@ export default function RHAssignmentsPage() {
         err.message ||
         'Não foi possível carregar os dados.'
       )
+
     }
+
   }
 
 
   // ==========================================================
-  // CARREGAR ALOCAÇÕES
+  // ALOCAÇÕES
   // ==========================================================
 
   async function loadAssignments() {
+
     try {
-      setLoading(true)
+
+      setLoading(
+        true
+      )
 
       setError('')
 
@@ -258,8 +339,12 @@ export default function RHAssignmentsPage() {
         )
 
 
-      setAssignments(data)
+      setAssignments(
+        data
+      )
+
     } catch (err) {
+
       console.error(
         'Erro ao carregar alocações:',
         err
@@ -270,58 +355,237 @@ export default function RHAssignmentsPage() {
         err.message ||
         'Não foi possível carregar as alocações.'
       )
+
     } finally {
-      setLoading(false)
+
+      setLoading(
+        false
+      )
+
     }
+
   }
 
 
-  useEffect(() => {
-    loadBaseData()
-  }, [])
+  useEffect(
+    () => {
+
+      loadBaseData()
+
+    },
+    []
+  )
 
 
-  useEffect(() => {
-    if (workDate) {
-      loadAssignments()
-    }
-  }, [workDate])
+  useEffect(
+    () => {
+
+      if (workDate) {
+        loadAssignments()
+      }
+
+    },
+    [
+      workDate,
+    ]
+  )
+
+
+  // ==========================================================
+  // PARADAS
+  // ==========================================================
+
+  function updateStop(
+    stopId,
+    field,
+    value
+  ) {
+
+    setStops(
+      current =>
+        current.map(
+          stop =>
+            stop.id ===
+            stopId
+              ? {
+                  ...stop,
+                  [field]:
+                    value,
+                }
+              : stop
+        )
+    )
+
+  }
+
+
+  function addStop() {
+
+    setStops(
+      current => [
+        ...current,
+        createEmptyStop(),
+      ]
+    )
+
+  }
+
+
+  function removeStop(
+    stopId
+  ) {
+
+    setStops(
+      current => {
+
+        if (
+          current.length ===
+          1
+        ) {
+          return current
+        }
+
+
+        return current.filter(
+          stop =>
+            stop.id !==
+            stopId
+        )
+
+      }
+    )
+
+  }
+
+
+  function moveStop(
+    index,
+    direction
+  ) {
+
+    setStops(
+      current => {
+
+        const targetIndex =
+          direction ===
+          'up'
+            ? index - 1
+            : index + 1
+
+
+        if (
+          targetIndex < 0 ||
+          targetIndex >=
+            current.length
+        ) {
+          return current
+        }
+
+
+        const next =
+          [
+            ...current,
+          ]
+
+
+        const [
+          moved,
+        ] =
+          next.splice(
+            index,
+            1
+          )
+
+
+        next.splice(
+          targetIndex,
+          0,
+          moved
+        )
+
+
+        return next
+
+      }
+    )
+
+  }
 
 
   // ==========================================================
   // SALVAR
   // ==========================================================
 
-  async function handleSave(event) {
+  async function handleSave(
+    event
+  ) {
+
     event.preventDefault()
+
 
     setMessage('')
     setError('')
 
 
     if (!selectedEmployee) {
+
       setError(
         'Selecione um funcionário.'
       )
 
       return
+
     }
 
 
-    if (!locationId) {
+    if (
+      stops.some(
+        stop =>
+          !stop.locationId
+      )
+    ) {
+
       setError(
-        'Selecione o local de trabalho.'
+        'Selecione o local de todas as paradas.'
       )
 
       return
+
+    }
+
+
+    const uniqueLocations =
+      new Set(
+        stops.map(
+          stop =>
+            stop.locationId
+        )
+      )
+
+
+    if (
+      uniqueLocations.size !==
+      stops.length
+    ) {
+
+      setError(
+        'O mesmo local não pode aparecer duas vezes no roteiro.'
+      )
+
+      return
+
     }
 
 
     try {
-      setSaving(true)
+
+      setSaving(
+        true
+      )
 
 
       await saveAssignment({
+
         employee:
           selectedEmployee,
 
@@ -329,24 +593,34 @@ export default function RHAssignmentsPage() {
 
         assignmentType,
 
-        locationId,
+        stops,
 
         notes,
+
       })
 
 
       setMessage(
-        'Alocação salva com sucesso.'
+        stops.length ===
+          1
+          ? 'Alocação salva com sucesso.'
+          : `Alocação salva com ${stops.length} paradas no roteiro.`
       )
 
 
       setEmployeeId('')
-      setLocationId('')
+
       setNotes('')
+
+      setStops([
+        createEmptyStop(),
+      ])
 
 
       await loadAssignments()
+
     } catch (err) {
+
       console.error(
         'Erro ao salvar:',
         err
@@ -357,9 +631,15 @@ export default function RHAssignmentsPage() {
         err.message ||
         'Não foi possível salvar a alocação.'
       )
+
     } finally {
-      setSaving(false)
+
+      setSaving(
+        false
+      )
+
     }
+
   }
 
 
@@ -370,9 +650,10 @@ export default function RHAssignmentsPage() {
   async function handleCancel(
     assignmentId
   ) {
+
     const confirmed =
       window.confirm(
-        'Deseja cancelar esta alocação?'
+        'Deseja cancelar esta alocação e todo o roteiro deste funcionário?'
       )
 
 
@@ -382,6 +663,7 @@ export default function RHAssignmentsPage() {
 
 
     try {
+
       setMessage('')
       setError('')
 
@@ -397,7 +679,9 @@ export default function RHAssignmentsPage() {
 
 
       await loadAssignments()
+
     } catch (err) {
+
       console.error(
         'Erro ao cancelar:',
         err
@@ -408,7 +692,9 @@ export default function RHAssignmentsPage() {
         err.message ||
         'Não foi possível cancelar a alocação.'
       )
+
     }
+
   }
 
 
@@ -418,7 +704,9 @@ export default function RHAssignmentsPage() {
       <div className="assignment-page__container">
 
 
-        {/* HEADER */}
+        {/* ====================================================
+            HEADER
+        ==================================================== */}
 
         <header className="assignment-header">
 
@@ -428,24 +716,35 @@ export default function RHAssignmentsPage() {
               to="/rh"
               className="assignment-icon-button"
             >
-              <ArrowLeft size={20} />
+
+              <ArrowLeft
+                size={20}
+              />
+
             </Link>
 
 
             <div>
 
               <span className="assignment-eyebrow">
+
                 Ponto Digital • RH
+
               </span>
 
+
               <h1>
+
                 Alocações do dia
+
               </h1>
 
+
               <p>
-                Defina onde e em qual
-                jornada cada funcionário
-                trabalhará.
+
+                Defina a jornada e o
+                roteiro de cada funcionário.
+
               </p>
 
             </div>
@@ -461,17 +760,26 @@ export default function RHAssignmentsPage() {
             }
             title="Atualizar"
           >
-            <RefreshCw size={20} />
+
+            <RefreshCw
+              size={20}
+            />
+
           </button>
 
         </header>
 
 
-        {/* DATA */}
+        {/* ====================================================
+            DATA
+        ==================================================== */}
 
         <section className="assignment-date-card">
 
-          <CalendarDays size={20} />
+          <CalendarDays
+            size={20}
+          />
+
 
           <div>
 
@@ -479,9 +787,12 @@ export default function RHAssignmentsPage() {
               Data da programação
             </span>
 
+
             <input
               type="date"
-              value={workDate}
+              value={
+                workDate
+              }
               onChange={
                 event =>
                   setWorkDate(
@@ -495,7 +806,9 @@ export default function RHAssignmentsPage() {
         </section>
 
 
-        {/* FORMULÁRIO */}
+        {/* ====================================================
+            FORM
+        ==================================================== */}
 
         <form
           className="assignment-form"
@@ -518,6 +831,7 @@ export default function RHAssignmentsPage() {
 
             </div>
 
+
             <span>
               {workDate}
             </span>
@@ -533,8 +847,14 @@ export default function RHAssignmentsPage() {
               Funcionário
             </span>
 
+
             <select
-              value={employeeId}
+              value={
+                employeeId
+              }
+              disabled={
+                saving
+              }
               onChange={
                 event =>
                   setEmployeeId(
@@ -544,17 +864,26 @@ export default function RHAssignmentsPage() {
             >
 
               <option value="">
+
                 Selecione o funcionário
+
               </option>
+
 
               {employees.map(
                 employee => (
 
                   <option
-                    key={employee.id}
-                    value={employee.id}
+                    key={
+                      employee.id
+                    }
+                    value={
+                      employee.id
+                    }
                   >
+
                     {employee.full_name}
+
                   </option>
 
                 )
@@ -571,6 +900,9 @@ export default function RHAssignmentsPage() {
 
             <button
               type="button"
+              disabled={
+                saving
+              }
               className={
                 `assignment-type-card ${
                   assignmentType ===
@@ -603,6 +935,9 @@ export default function RHAssignmentsPage() {
 
             <button
               type="button"
+              disabled={
+                saving
+              }
               className={
                 `assignment-type-card ${
                   assignmentType ===
@@ -635,7 +970,7 @@ export default function RHAssignmentsPage() {
           </div>
 
 
-          {/* HORÁRIOS */}
+          {/* JORNADA */}
 
           <div className="assignment-schedule-preview">
 
@@ -685,57 +1020,364 @@ export default function RHAssignmentsPage() {
           </div>
 
 
-          {/* LOCAL */}
+          {/* ==================================================
+              ROTEIRO
+          ================================================== */}
 
-          <label className="assignment-field">
+          <section className="assignment-route">
 
-            <span>
-              Local de trabalho
-            </span>
+            <div className="assignment-route__header">
 
-            <select
-              value={locationId}
-              onChange={
-                event =>
-                  setLocationId(
-                    event.target.value
-                  )
-              }
-            >
+              <div>
 
-              <option value="">
-                Selecione o local
-              </option>
+                <Route
+                  size={21}
+                />
 
-              {locations.map(
-                location => (
 
-                  <option
-                    key={location.id}
-                    value={location.id}
+                <div>
+
+                  <strong>
+                    Roteiro do dia
+                  </strong>
+
+                  <span>
+                    Adicione os clientes na ordem da visita.
+                  </span>
+
+                </div>
+
+              </div>
+
+
+              <span className="assignment-route__count">
+
+                {stops.length}
+
+                {' '}
+
+                parada
+                {stops.length !==
+                1
+                  ? 's'
+                  : ''
+                }
+
+              </span>
+
+            </div>
+
+
+            <div className="assignment-route__list">
+
+              {stops.map(
+                (
+                  stop,
+                  index
+                ) => (
+
+                  <article
+                    key={
+                      stop.id
+                    }
+                    className="assignment-stop"
                   >
-                    {location.name}
-                  </option>
+
+                    <div className="assignment-stop__top">
+
+                      <div className="assignment-stop__number">
+
+                        {index + 1}
+
+                      </div>
+
+
+                      <div className="assignment-stop__title">
+
+                        <strong>
+
+                          {index === 0
+                            ? 'Primeiro destino'
+                            : `Destino ${index + 1}`
+                          }
+
+                        </strong>
+
+
+                        <span>
+
+                          {index === 0
+                            ? 'Local inicial da jornada'
+                            : 'Próxima visita do roteiro'
+                          }
+
+                        </span>
+
+                      </div>
+
+
+                      <div className="assignment-stop__controls">
+
+                        <button
+                          type="button"
+                          title="Mover para cima"
+                          disabled={
+                            saving ||
+                            index === 0
+                          }
+                          onClick={() =>
+                            moveStop(
+                              index,
+                              'up'
+                            )
+                          }
+                        >
+
+                          <ArrowUp
+                            size={15}
+                          />
+
+                        </button>
+
+
+                        <button
+                          type="button"
+                          title="Mover para baixo"
+                          disabled={
+                            saving ||
+                            index ===
+                              stops.length - 1
+                          }
+                          onClick={() =>
+                            moveStop(
+                              index,
+                              'down'
+                            )
+                          }
+                        >
+
+                          <ArrowDown
+                            size={15}
+                          />
+
+                        </button>
+
+
+                        <button
+                          type="button"
+                          title="Remover parada"
+                          className="assignment-stop__remove"
+                          disabled={
+                            saving ||
+                            stops.length ===
+                              1
+                          }
+                          onClick={() =>
+                            removeStop(
+                              stop.id
+                            )
+                          }
+                        >
+
+                          <Trash2
+                            size={15}
+                          />
+
+                        </button>
+
+                      </div>
+
+                    </div>
+
+
+                    <label className="assignment-field">
+
+                      <span>
+                        Cliente / local
+                      </span>
+
+
+                      <select
+                        value={
+                          stop.locationId
+                        }
+                        disabled={
+                          saving
+                        }
+                        onChange={
+                          event =>
+                            updateStop(
+                              stop.id,
+                              'locationId',
+                              event.target.value
+                            )
+                        }
+                      >
+
+                        <option value="">
+
+                          Selecione o local
+
+                        </option>
+
+
+                        {locations.map(
+                          location => (
+
+                            <option
+                              key={
+                                location.id
+                              }
+                              value={
+                                location.id
+                              }
+                            >
+
+                              {location.name}
+
+                            </option>
+
+                          )
+                        )}
+
+                      </select>
+
+                    </label>
+
+
+                    <div className="assignment-stop__times">
+
+                      <label className="assignment-field">
+
+                        <span>
+                          Chegada prevista
+                        </span>
+
+                        <input
+                          type="time"
+                          value={
+                            stop.expectedArrival
+                          }
+                          disabled={
+                            saving
+                          }
+                          onChange={
+                            event =>
+                              updateStop(
+                                stop.id,
+                                'expectedArrival',
+                                event.target.value
+                              )
+                          }
+                        />
+
+                      </label>
+
+
+                      <label className="assignment-field">
+
+                        <span>
+                          Saída prevista
+                        </span>
+
+                        <input
+                          type="time"
+                          value={
+                            stop.expectedDeparture
+                          }
+                          disabled={
+                            saving
+                          }
+                          onChange={
+                            event =>
+                              updateStop(
+                                stop.id,
+                                'expectedDeparture',
+                                event.target.value
+                              )
+                          }
+                        />
+
+                      </label>
+
+                    </div>
+
+
+                    <label className="assignment-field assignment-field--last">
+
+                      <span>
+                        Observação da parada
+                      </span>
+
+
+                      <input
+                        type="text"
+                        value={
+                          stop.notes
+                        }
+                        disabled={
+                          saving
+                        }
+                        placeholder="Ex.: manutenção preventiva no 12º andar"
+                        onChange={
+                          event =>
+                            updateStop(
+                              stop.id,
+                              'notes',
+                              event.target.value
+                            )
+                        }
+                      />
+
+                    </label>
+
+                  </article>
 
                 )
               )}
 
-            </select>
-
-          </label>
+            </div>
 
 
-          {/* OBSERVAÇÃO */}
+            <button
+              type="button"
+              className="assignment-add-stop"
+              disabled={
+                saving
+              }
+              onClick={
+                addStop
+              }
+            >
+
+              <Plus
+                size={18}
+              />
+
+              Adicionar outro cliente
+
+            </button>
+
+          </section>
+
+
+          {/* OBSERVAÇÃO GERAL */}
 
           <label className="assignment-field">
 
             <span>
-              Observação
+              Observação geral do dia
             </span>
 
+
             <textarea
-              value={notes}
-              placeholder="Ex.: manutenção preventiva no cliente..."
+              value={
+                notes
+              }
+              disabled={
+                saving
+              }
+              placeholder="Ex.: roteiro de manutenções preventivas..."
               onChange={
                 event =>
                   setNotes(
@@ -748,37 +1390,53 @@ export default function RHAssignmentsPage() {
 
 
           {error && (
+
             <div className="point-message point-message--error">
+
               {error}
+
             </div>
+
           )}
 
 
           {message && (
+
             <div className="point-message point-message--success">
+
               {message}
+
             </div>
+
           )}
 
 
           <button
             type="submit"
             className="assignment-save-button"
-            disabled={saving}
+            disabled={
+              saving
+            }
           >
 
-            <Plus size={19} />
+            <Plus
+              size={19}
+            />
+
 
             {saving
               ? 'Salvando...'
-              : 'Salvar alocação'}
+              : 'Salvar alocação e roteiro'
+            }
 
           </button>
 
         </form>
 
 
-        {/* LISTAGEM */}
+        {/* ====================================================
+            LISTA
+        ==================================================== */}
 
         <section className="assignment-list">
 
@@ -788,13 +1446,20 @@ export default function RHAssignmentsPage() {
               Programação do dia
             </h2>
 
+
             <span>
+
               {assignments.length}
+
               {' '}
+
               alocação
-              {assignments.length !== 1
+              {assignments.length !==
+              1
                 ? 'ões'
-                : ''}
+                : ''
+              }
+
             </span>
 
           </div>
@@ -803,22 +1468,29 @@ export default function RHAssignmentsPage() {
           {loading ? (
 
             <div className="assignment-empty">
+
               Carregando...
+
             </div>
 
-          ) : assignments.length === 0 ? (
+          ) : assignments.length ===
+            0 ? (
 
             <div className="assignment-empty">
 
-              <Building2 size={28} />
+              <Building2
+                size={28}
+              />
 
               <strong>
                 Nenhuma alocação
               </strong>
 
               <span>
+
                 Ainda não existe programação
                 para esta data.
+
               </span>
 
             </div>
@@ -829,7 +1501,9 @@ export default function RHAssignmentsPage() {
               assignment => (
 
                 <article
-                  key={assignment.id}
+                  key={
+                    assignment.id
+                  }
                   className="assignment-item"
                 >
 
@@ -841,7 +1515,8 @@ export default function RHAssignmentsPage() {
                         ?.full_name
                         ?.charAt(0)
                         ?.toUpperCase() ||
-                        '?'}
+                        '?'
+                      }
 
                     </div>
 
@@ -849,17 +1524,20 @@ export default function RHAssignmentsPage() {
                     <div className="assignment-item__employee">
 
                       <strong>
-                        {
-                          assignment.employee
-                            ?.full_name ||
+
+                        {assignment.employee
+                          ?.full_name ||
                           'Funcionário'
                         }
+
                       </strong>
 
                       <span>
+
                         {getAssignmentLabel(
                           assignment.assignment_type
                         )}
+
                       </span>
 
                     </div>
@@ -875,7 +1553,11 @@ export default function RHAssignmentsPage() {
                         )
                       }
                     >
-                      <Trash2 size={17} />
+
+                      <Trash2
+                        size={17}
+                      />
+
                     </button>
 
                   </div>
@@ -885,18 +1567,33 @@ export default function RHAssignmentsPage() {
 
                     <span>
 
-                      <MapPin size={15} />
+                      <Route
+                        size={15}
+                      />
 
-                      {assignment.location
-                        ?.name ||
-                        'Sem local'}
+                      {assignment.stops
+                        ?.length ||
+                        0
+                      }
+
+                      {' '}
+
+                      parada
+                      {assignment.stops
+                        ?.length !==
+                        1
+                        ? 's'
+                        : ''
+                      }
 
                     </span>
 
 
                     <span>
 
-                      <Clock3 size={15} />
+                      <Clock3
+                        size={15}
+                      />
 
                       {shortTime(
                         assignment.expected_clock_in
@@ -924,7 +1621,6 @@ export default function RHAssignmentsPage() {
                       </strong>
                     </span>
 
-
                     <span>
                       Almoço
                       <strong>
@@ -934,7 +1630,6 @@ export default function RHAssignmentsPage() {
                       </strong>
                     </span>
 
-
                     <span>
                       Retorno
                       <strong>
@@ -943,7 +1638,6 @@ export default function RHAssignmentsPage() {
                         )}
                       </strong>
                     </span>
-
 
                     <span>
                       Saída
@@ -957,10 +1651,121 @@ export default function RHAssignmentsPage() {
                   </div>
 
 
+                  {/* ROTEIRO SALVO */}
+
+                  <div className="assignment-item__route">
+
+                    <div className="assignment-item__route-title">
+
+                      <Route
+                        size={16}
+                      />
+
+                      <strong>
+                        Roteiro
+                      </strong>
+
+                    </div>
+
+
+                    {assignment.stops
+                      ?.map(
+                        stop => (
+
+                          <div
+                            key={
+                              stop.id
+                            }
+                            className="assignment-item__stop"
+                          >
+
+                            <div className="assignment-item__stop-number">
+
+                              {stop.sequence}
+
+                            </div>
+
+
+                            <div className="assignment-item__stop-content">
+
+                              <strong>
+
+                                {stop.location
+                                  ?.name ||
+                                  'Local não informado'
+                                }
+
+                              </strong>
+
+
+                              {stop.location
+                                ?.address && (
+
+                                <span>
+
+                                  <MapPin
+                                    size={12}
+                                  />
+
+                                  {
+                                    stop.location.address
+                                  }
+
+                                </span>
+
+                              )}
+
+
+                              {(stop.expected_arrival ||
+                                stop.expected_departure) && (
+
+                                <span>
+
+                                  <Clock3
+                                    size={12}
+                                  />
+
+                                  {shortTime(
+                                    stop.expected_arrival
+                                  )}
+
+                                  {' — '}
+
+                                  {shortTime(
+                                    stop.expected_departure
+                                  )}
+
+                                </span>
+
+                              )}
+
+
+                              {stop.notes && (
+
+                                <small>
+
+                                  {stop.notes}
+
+                                </small>
+
+                              )}
+
+                            </div>
+
+                          </div>
+
+                        )
+                      )}
+
+                  </div>
+
+
                   {assignment.notes && (
 
                     <p className="assignment-item__notes">
+
                       {assignment.notes}
+
                     </p>
 
                   )}
@@ -973,7 +1778,6 @@ export default function RHAssignmentsPage() {
           )}
 
         </section>
-
 
       </div>
 

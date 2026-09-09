@@ -182,7 +182,7 @@ export default function DashboardFuncionarioPage() {
 
 
   // =========================================================
-  // LOCAL ANTIGO / PRINCIPAL
+  // LOCAL PRINCIPAL / COMPATIBILIDADE
   // =========================================================
 
   const assignedLocation =
@@ -288,7 +288,7 @@ export default function DashboardFuncionarioPage() {
 
 
   // =========================================================
-  // LOCAIS AUTORIZADOS PARA GPS
+  // LOCAIS AUTORIZADOS
   // =========================================================
 
   const validationLocations =
@@ -344,7 +344,7 @@ export default function DashboardFuncionarioPage() {
 
 
   // =========================================================
-  // ROTEIRO
+  // CARREGAR ROTEIRO
   // =========================================================
 
   const loadRoute =
@@ -523,7 +523,7 @@ export default function DashboardFuncionarioPage() {
 
 
   // =========================================================
-  // CARREGAR DASHBOARD
+  // DASHBOARD
   // =========================================================
 
   const loadDashboard =
@@ -734,7 +734,6 @@ export default function DashboardFuncionarioPage() {
 
         <span className="point-loading-spinner" />
 
-
         <strong>
           Carregando seu ponto...
         </strong>
@@ -784,9 +783,7 @@ export default function DashboardFuncionarioPage() {
           <div>
 
             <span className="employee-header__brand">
-
               Ponto Digital
-
             </span>
 
 
@@ -904,24 +901,34 @@ export default function DashboardFuncionarioPage() {
         <ClockCard />
 
 
-        {/* ALOCAÇÃO HOJE */}
+        {/* ALOCAÇÃO DE HOJE */}
 
         <TodayAssignmentCard
           assignment={
             assignment
           }
+
           loading={
             assignmentLoading
           }
         />
 
 
-        {/* ROTEIRO HOJE */}
+        {/* ROTEIRO */}
 
         <TodayRouteCard
           route={
             todayRoute
           }
+
+          entries={
+            entries
+          }
+
+          nearestLocation={
+            nearestLocation
+          }
+
           loading={
             routeLoading
           }
@@ -934,6 +941,7 @@ export default function DashboardFuncionarioPage() {
           assignment={
             nextAssignment
           }
+
           loading={
             nextAssignmentLoading
           }
@@ -987,7 +995,6 @@ export default function DashboardFuncionarioPage() {
             <strong>
               Reconhecimento facial
             </strong>
-
 
             <span>
 

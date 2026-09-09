@@ -1,5 +1,7 @@
 import {
+  CheckCircle2,
   Clock3,
+  LocateFixed,
   MapPin,
   Navigation,
   Route,
@@ -24,6 +26,10 @@ function shortTime(
 }
 
 
+// ============================================================
+// GOOGLE MAPS
+// ============================================================
+
 function createMapsUrl(
   location
 ) {
@@ -43,17 +49,70 @@ function createMapsUrl(
 }
 
 
+// ============================================================
+// COMPONENTE
+// ============================================================
+
 export default function TodayRouteCard({
   route,
+  entries = [],
+  nearestLocation,
   loading,
 }) {
+
+  // ==========================================================
+  // LOCAIS QUE JÁ POSSUEM ALGUMA BATIDA
+  // ==========================================================
+
+  const visitedLocationIds =
+    new Set(
+      entries
+        .filter(
+          entry =>
+            entry.location_id
+        )
+        .map(
+          entry =>
+            entry.location_id
+        )
+    )
+
+
+  // ==========================================================
+  // PRIMEIRA PARADA AINDA NÃO VISITADA
+  // ==========================================================
+
+  const nextStop =
+    route?.find(
+      stop =>
+        !visitedLocationIds.has(
+          stop.location_id
+        )
+    ) ?? null
+
+
+  // ==========================================================
+  // LOCAL ONDE O FUNCIONÁRIO ESTÁ AGORA
+  // ==========================================================
+
+  const currentStop =
+    nearestLocation?.inside
+      ? route?.find(
+          stop =>
+            stop.location_id ===
+            nearestLocation.id
+        ) ?? null
+      : null
+
+
+  // ==========================================================
+  // LOADING
+  // ==========================================================
 
   if (loading) {
 
     return (
-      <section
-        className="point-location-card"
-      >
+      <section className="point-location-card">
 
         <header className="point-section-header">
 
@@ -92,9 +151,11 @@ export default function TodayRouteCard({
 
 
   return (
-    <section
-      className="point-location-card"
-    >
+    <section className="point-location-card">
+
+      {/* ======================================================
+          HEADER
+      ====================================================== */}
 
       <header className="point-section-header">
 
@@ -145,6 +206,10 @@ export default function TodayRouteCard({
       </header>
 
 
+      {/* ======================================================
+          LISTA
+      ====================================================== */}
+
       <div
         style={{
           display:
@@ -167,6 +232,169 @@ export default function TodayRouteCard({
               )
 
 
+            const isCurrent =
+              currentStop?.id ===
+              stop.id
+
+
+            const wasVisited =
+              visitedLocationIds.has(
+                stop.location_id
+              )
+
+
+            const isNext =
+              !isCurrent &&
+              !wasVisited &&
+              nextStop?.id ===
+                stop.id
+
+
+            let statusLabel =
+              'Depois'
+
+
+            let statusIcon =
+              null
+
+
+            let statusStyle = {
+
+              color:
+                '#64748b',
+
+              background:
+                '#f1f5f9',
+
+              border:
+                '1px solid #e2e8f0',
+
+            }
+
+
+            let cardStyle = {
+
+              background:
+                '#f8fafc',
+
+              border:
+                '1px solid #e2e8f0',
+
+            }
+
+
+            let numberBackground =
+              '#2563eb'
+
+
+            if (isCurrent) {
+
+              statusLabel =
+                'Você está aqui'
+
+
+              statusIcon =
+                <LocateFixed
+                  size={12}
+                />
+
+
+              statusStyle = {
+
+                color:
+                  '#15803d',
+
+                background:
+                  '#f0fdf4',
+
+                border:
+                  '1px solid #bbf7d0',
+
+              }
+
+
+              cardStyle = {
+
+                background:
+                  '#f0fdf4',
+
+                border:
+                  '1px solid #86efac',
+
+              }
+
+
+              numberBackground =
+                '#16a34a'
+
+            } else if (wasVisited) {
+
+              statusLabel =
+                'Passagem registrada'
+
+
+              statusIcon =
+                <CheckCircle2
+                  size={12}
+                />
+
+
+              statusStyle = {
+
+                color:
+                  '#15803d',
+
+                background:
+                  '#f0fdf4',
+
+                border:
+                  '1px solid #bbf7d0',
+
+              }
+
+
+              numberBackground =
+                '#16a34a'
+
+            } else if (isNext) {
+
+              statusLabel =
+                'Próximo destino'
+
+
+              statusIcon =
+                <Navigation
+                  size={12}
+                />
+
+
+              statusStyle = {
+
+                color:
+                  '#1d4ed8',
+
+                background:
+                  '#eff6ff',
+
+                border:
+                  '1px solid #bfdbfe',
+
+              }
+
+
+              cardStyle = {
+
+                background:
+                  '#eff6ff',
+
+                border:
+                  '1px solid #93c5fd',
+
+              }
+
+            }
+
+
             return (
               <article
                 key={
@@ -185,16 +413,17 @@ export default function TodayRouteCard({
                   padding:
                     '12px',
 
-                  background:
-                    '#f8fafc',
-
-                  border:
-                    '1px solid #e2e8f0',
-
                   borderRadius:
                     '13px',
+
+                  transition:
+                    '0.2s',
+
+                  ...cardStyle,
                 }}
               >
+
+                {/* NÚMERO */}
 
                 <div
                   style={{
@@ -220,7 +449,7 @@ export default function TodayRouteCard({
                       '#ffffff',
 
                     background:
-                      '#2563eb',
+                      numberBackground,
 
                     borderRadius:
                       '10px',
@@ -238,6 +467,8 @@ export default function TodayRouteCard({
                 </div>
 
 
+                {/* CONTEÚDO */}
+
                 <div
                   style={{
                     minWidth:
@@ -253,9 +484,57 @@ export default function TodayRouteCard({
                       'column',
 
                     gap:
-                      '5px',
+                      '6px',
                   }}
                 >
+
+                  {/* STATUS */}
+
+                  <div>
+
+                    <span
+                      style={{
+                        display:
+                          'inline-flex',
+
+                        alignItems:
+                          'center',
+
+                        gap:
+                          '4px',
+
+                        padding:
+                          '4px 7px',
+
+                        borderRadius:
+                          '999px',
+
+                        fontSize:
+                          '8px',
+
+                        fontWeight:
+                          '800',
+
+                        textTransform:
+                          'uppercase',
+
+                        letterSpacing:
+                          '0.3px',
+
+                        ...statusStyle,
+                      }}
+                    >
+
+                      {statusIcon}
+
+                      {statusLabel}
+
+                    </span>
+
+                  </div>
+
+
+                  {/* LOCAL */}
 
                   <strong
                     style={{
@@ -274,6 +553,8 @@ export default function TodayRouteCard({
 
                   </strong>
 
+
+                  {/* ENDEREÇO */}
 
                   {stop.location
                     ?.address && (
@@ -309,6 +590,8 @@ export default function TodayRouteCard({
 
                   )}
 
+
+                  {/* HORÁRIO */}
 
                   {(stop.expected_arrival ||
                     stop.expected_departure) && (
@@ -351,6 +634,8 @@ export default function TodayRouteCard({
                   )}
 
 
+                  {/* OBSERVAÇÃO */}
+
                   {stop.notes && (
 
                     <span
@@ -372,6 +657,8 @@ export default function TodayRouteCard({
                 </div>
 
 
+                {/* MAPS */}
+
                 {mapsUrl && (
 
                   <a
@@ -380,7 +667,7 @@ export default function TodayRouteCard({
                     }
                     target="_blank"
                     rel="noreferrer"
-                    title="Abrir no Maps"
+                    title="Abrir rota no Maps"
                     style={{
                       width:
                         '34px',
@@ -401,10 +688,14 @@ export default function TodayRouteCard({
                         'center',
 
                       color:
-                        '#2563eb',
+                        isCurrent
+                          ? '#15803d'
+                          : '#2563eb',
 
                       background:
-                        '#eff6ff',
+                        isCurrent
+                          ? '#dcfce7'
+                          : '#eff6ff',
 
                       borderRadius:
                         '10px',

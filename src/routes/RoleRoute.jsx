@@ -20,6 +20,10 @@ export default function RoleRoute({
     useAuth()
 
 
+  // =========================================================
+  // CARREGANDO SESSÃO / PERFIL
+  // =========================================================
+
   if (loading) {
 
     return (
@@ -27,13 +31,19 @@ export default function RoleRoute({
 
         <span className="point-loading-spinner" />
 
-        Carregando...
+        <strong>
+          Verificando permissões...
+        </strong>
 
       </main>
     )
 
   }
 
+
+  // =========================================================
+  // NÃO AUTENTICADO
+  // =========================================================
 
   if (!isAuthenticated) {
 
@@ -47,9 +57,32 @@ export default function RoleRoute({
   }
 
 
+  // =========================================================
+  // PERFIL NÃO ENCONTRADO
+  //
+  // Nunca liberamos uma área protegida sem saber
+  // qual é a função real do usuário.
+  // =========================================================
+
+  if (!profile?.role) {
+
+    return (
+      <Navigate
+        to="/app"
+        replace
+      />
+    )
+
+  }
+
+
+  // =========================================================
+  // ROLE NÃO AUTORIZADA
+  // =========================================================
+
   if (
     !allowedRoles.includes(
-      profile?.role
+      profile.role
     )
   ) {
 
@@ -62,6 +95,10 @@ export default function RoleRoute({
 
   }
 
+
+  // =========================================================
+  // ACESSO AUTORIZADO
+  // =========================================================
 
   return children
 }

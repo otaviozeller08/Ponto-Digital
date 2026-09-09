@@ -1,4 +1,6 @@
-import { supabase } from '../../../lib/supabase'
+import {
+  supabase,
+} from '../../../lib/supabase'
 
 
 // ============================================================
@@ -6,13 +8,18 @@ import { supabase } from '../../../lib/supabase'
 // ============================================================
 
 export async function getCurrentEmployee() {
+
   const {
     data: {
       user,
     },
-    error: userError,
+
+    error:
+      userError,
   } =
-    await supabase.auth.getUser()
+    await supabase
+      .auth
+      .getUser()
 
 
   if (
@@ -30,7 +37,9 @@ export async function getCurrentEmployee() {
     error,
   } =
     await supabase
-      .from('employees')
+      .from(
+        'employees'
+      )
       .select(`
         id,
         user_id,
@@ -69,8 +78,49 @@ export async function createAdjustmentRequest({
   requestedTime,
   reason,
 }) {
+
   const employee =
     await getCurrentEmployee()
+
+
+  if (!workDate) {
+    throw new Error(
+      'Informe a data do ajuste.'
+    )
+  }
+
+
+  if (
+    ![
+      'clock_in',
+      'break_start',
+      'break_end',
+      'clock_out',
+    ].includes(
+      entryType
+    )
+  ) {
+    throw new Error(
+      'Tipo de registro inválido.'
+    )
+  }
+
+
+  if (!requestedTime) {
+    throw new Error(
+      'Informe o horário correto.'
+    )
+  }
+
+
+  if (
+    !reason ||
+    !reason.trim()
+  ) {
+    throw new Error(
+      'Informe o motivo do ajuste.'
+    )
+  }
 
 
   const {
@@ -82,6 +132,7 @@ export async function createAdjustmentRequest({
         'adjustment_requests'
       )
       .insert({
+
         company_id:
           employee.company_id,
 
@@ -102,6 +153,7 @@ export async function createAdjustmentRequest({
 
         status:
           'pending',
+
       })
       .select()
       .single()
@@ -121,6 +173,7 @@ export async function createAdjustmentRequest({
 // ============================================================
 
 export async function getMyAdjustmentRequests() {
+
   const employee =
     await getCurrentEmployee()
 
@@ -168,12 +221,15 @@ export async function getMyAdjustmentRequests() {
 
 
 // ============================================================
-// RH - BUSCAR TODAS
+// RH - BUSCAR SOLICITAÇÕES
 // ============================================================
 
 export async function getAdjustmentRequestsForRH() {
+
   const {
-    data: requests,
+    data:
+      requests,
+
     error,
   } =
     await supabase
@@ -224,12 +280,16 @@ export async function getAdjustmentRequestsForRH() {
 
 
   const {
-    data: employees,
+    data:
+      employees,
+
     error:
       employeesError,
   } =
     await supabase
-      .from('employees')
+      .from(
+        'employees'
+      )
       .select(`
         id,
         full_name,
@@ -248,6 +308,7 @@ export async function getAdjustmentRequestsForRH() {
 
   return requests.map(
     request => ({
+
       ...request,
 
       employee:
@@ -256,19 +317,37 @@ export async function getAdjustmentRequestsForRH() {
             employee.id ===
             request.employee_id
         ) ?? null,
+
     })
   )
 }
 
 
 // ============================================================
-// RH - APROVAR / RECUSAR
+// RH - APROVAR / RECUSAR AJUSTE
 //
-// POR ENQUANTO:
-// atualiza a solicitação.
+// IMPORTANTE:
 //
-// Na próxima etapa vamos ligar a aprovação à criação/correção
-// efetiva do time_entry pelo backend.
+// NÃO alteramos adjustment_requests diretamente.
+//
+// A aprovação passa pela Edge Function:
+//
+// review-adjustment
+//
+// Ela chama a RPC:
+//
+// review_adjustment_request
+//
+// Assim:
+//
+// APROVADO
+// → cria ou corrige time_entries
+// → depois marca solicitação approved
+//
+// RECUSADO
+// → marca solicitação rejected
+//
+// Toda regra sensível fica no backend.
 // ============================================================
 
 export async function reviewAdjustmentRequest({
@@ -276,6 +355,14 @@ export async function reviewAdjustmentRequest({
   status,
   reviewNotes,
 }) {
+
+  if (!requestId) {
+    throw new Error(
+      'Solicitação não informada.'
+    )
+  }
+
+
   if (
     ![
       'approved',
@@ -290,13 +377,21 @@ export async function reviewAdjustmentRequest({
   }
 
 
+  // =========================================================
+  // GARANTIR SESSÃO
+  // =========================================================
+
   const {
     data: {
       user,
     },
-    error: userError,
+
+    error:
+      userError,
   } =
-    await supabase.auth.getUser()
+    await supabase
+      .auth
+      .getUser()
 
 
   if (
@@ -309,40 +404,64 @@ export async function reviewAdjustmentRequest({
   }
 
 
+  // =========================================================
+  // EDGE FUNCTION
+  // =========================================================
+
   const {
     data,
     error,
   } =
     await supabase
-      .from(
-        'adjustment_requests'
+      .functions
+      .invoke(
+        'review-adjustment',
+        {
+          body: {
+
+            requestId,
+
+            status,
+
+            reviewNotes:
+              reviewNotes
+                ?.trim() ||
+              null,
+
+          },
+        }
       )
-      .update({
-        status,
-
-        review_notes:
-          reviewNotes?.trim() ||
-          null,
-
-        reviewed_by:
-          user.id,
-
-        reviewed_at:
-          new Date()
-            .toISOString(),
-      })
-      .eq(
-        'id',
-        requestId
-      )
-      .select()
-      .single()
 
 
   if (error) {
-    throw error
+
+    console.error(
+      'Erro na função review-adjustment:',
+      error
+    )
+
+
+    throw new Error(
+      error.message ||
+      'Não foi possível revisar a solicitação.'
+    )
   }
 
 
-  return data
+  if (!data) {
+    throw new Error(
+      'O servidor não retornou uma resposta.'
+    )
+  }
+
+
+  if (!data.success) {
+    throw new Error(
+      data.error ||
+      'Não foi possível revisar a solicitação.'
+    )
+  }
+
+
+  return data.result
 }
